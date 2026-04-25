@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LibraryOS - Book Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #171b26;
+    --surface2: #1e2333;
+    --border: #2a3045;
+    --border-light: #323a52;
+    --teal: #2dd4bf;
+    --teal-glow: rgba(45,212,191,0.12);
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --green: #22c55e;
+    --text: #e2e8f0;
+    --text-mid: #94a3b8;
+    --text-dim: #4a5568;
+    --radius: 10px;
+    --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar { width: 240px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10; }
+  .sidebar-brand { padding: 28px 20px 20px; border-bottom: 1px solid var(--border); }
+  .brand-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--teal), #1a8a7c); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px; box-shadow: 0 0 20px var(--teal-glow); }
+  .brand-name { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .brand-name span { color: var(--teal); }
+  .brand-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); padding: 0 8px; margin-bottom: 6px; margin-top: 16px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-mid); transition: all 0.15s; margin-bottom: 2px; border: 1px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--teal-glow); color: var(--teal); border-color: rgba(45,212,191,0.2); }
+  .nav-item .ni { font-size: 15px; width: 18px; text-align: center; }
+  .sidebar-stats { padding: 16px; border-top: 1px solid var(--border); }
+  .ss-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .ss-row { display: flex; justify-content: space-between; }
+  .ss-item { text-align: center; }
+  .ss-num { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--teal); font-weight: 500; }
+  .ss-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+  /* MAIN */
+  .main { margin-left: 240px; flex: 1; padding: 32px 36px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .topbar h1 { font-family: 'Crimson Pro', serif; font-size: 32px; font-weight: 600; }
+  .topbar p { font-size: 13px; color: var(--text-mid); margin-top: 2px; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; white-space: nowrap; }
+  .btn-teal { background: var(--teal); color: #0f1117; }
+  .btn-teal:hover { background: #5eead4; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(45,212,191,0.3); }
+  .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--text-mid); }
+  .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+  .btn-red { background: rgba(239,68,68,0.1); border: 1.5px solid rgba(239,68,68,0.3); color: var(--red); }
+  .btn-red:hover { background: rgba(239,68,68,0.2); }
+  .btn-amber { background: rgba(245,158,11,0.1); border: 1.5px solid rgba(245,158,11,0.3); color: var(--amber); }
+  .btn-amber:hover { background: rgba(245,158,11,0.2); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* STAT CARDS */
+  .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; align-items: center; gap: 16px; }
+  .sc-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .sc-icon.teal { background: var(--teal-glow); }
+  .sc-icon.amber { background: rgba(245,158,11,0.1); }
+  .sc-icon.green { background: rgba(34,197,94,0.1); }
+  .sc-icon.red { background: rgba(239,68,68,0.1); }
+  .sc-num { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: var(--text); line-height: 1; }
+  .sc-label { font-size: 12px; color: var(--text-mid); margin-top: 4px; }
+
+  /* PANEL */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .panel-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-header h3 { font-family: 'Crimson Pro', serif; font-size: 20px; color: var(--text); }
+  .panel-header p { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th:hover { color: var(--teal); }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); color: var(--text-mid); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,0.02); }
+  .id-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--surface2); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; color: var(--teal); }
+  .category-tag { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(45,212,191,0.1); color: var(--teal); border: 1px solid rgba(45,212,191,0.2); }
+  .avail-badge { display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; }
+  .avail-badge.ok { color: var(--green); }
+  .avail-badge.low { color: var(--amber); }
+  .avail-badge.none { color: var(--red); }
+  .avail-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .action-row { display: flex; gap: 6px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .empty-state .es-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-size: 16px; color: var(--text-mid); margin-bottom: 6px; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid); margin-bottom: 7px; }
+  input, select, textarea { width: 100%; padding: 10px 13px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+  input:focus, select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-glow); }
+  input::placeholder { color: var(--text-dim); }
+  select option { background: var(--surface2); }
+  .field-error { font-size: 11px; color: var(--red); margin-top: 5px; display: none; }
+  .field-error.show { display: block; }
+
+  /* SEARCH BAR */
+  .search-wrap { flex: 1; position: relative; }
+  .search-wrap .sicon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text-dim); pointer-events: none; }
+  .search-input { width: 100%; padding: 11px 14px 11px 40px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); font-family: 'Sora', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-glow); }
+  .search-input::placeholder { color: var(--text-dim); }
+  .filter-select { padding: 11px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); font-family: 'Sora', sans-serif; font-size: 13px; color: var(--text-mid); outline: none; cursor: pointer; }
+  .filter-select:focus { border-color: var(--teal); }
+
+  /* MODAL */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .overlay.active { display: flex; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal { background: var(--surface); border: 1px solid var(--border-light); border-radius: 14px; padding: 36px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); animation: slideUp 0.2s ease; position: relative; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: var(--surface2); border: 1px solid var(--border); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-mid); font-size: 16px; transition: all 0.15s; }
+  .modal-close:hover { background: var(--border); color: var(--text); }
+  .modal-title { font-family: 'Crimson Pro', serif; font-size: 24px; color: var(--text); margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--text-mid); margin-bottom: 28px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .confirm-modal { max-width: 400px; text-align: center; }
+  .confirm-icon { font-size: 48px; margin-bottom: 16px; }
+  .confirm-modal h2 { font-family: 'Crimson Pro', serif; font-size: 22px; color: var(--text); margin-bottom: 8px; }
+  .confirm-modal p { font-size: 14px; color: var(--text-mid); margin-bottom: 24px; line-height: 1.6; }
+  .confirm-book-name { font-weight: 600; color: var(--text); }
+  .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-mid); }
+  .page-btns { display: flex; gap: 6px; }
+  .page-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: none; color: var(--text-mid); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: 'Sora', sans-serif; }
+  .page-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .page-btn.active { background: var(--teal); border-color: var(--teal); color: #0f1117; font-weight: 700; }
+
+  /* DB SCHEMA */
+  .schema-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a8c7e8; overflow-x: auto; line-height: 1.8; }
+  .schema-box .kw { color: #c792ea; }
+  .schema-box .tp { color: #ffcb6b; }
+  .schema-box .cm { color: #4a5568; }
+  .schema-box .tn { color: var(--teal); }
+  .schema-box .pk { color: #80cbc4; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 28px; right: 28px; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; display: flex; align-items: center; gap: 10px; transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: var(--shadow-lg); max-width: 320px; border: 1px solid; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); color: var(--green); }
+  .toast.error { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: var(--red); }
+  .toast.info { background: rgba(45,212,191,0.15); border-color: rgba(45,212,191,0.3); color: var(--teal); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📚</div>
+      <div class="brand-name">Library<span>OS</span></div>
+      <div class="brand-sub">Book Management</div>
+    </div>
+    <div class="nav">
+      <div class="nav-label">Navigation</div>
+      <div class="nav-item active" onclick="showSection('books')"><span class="ni">📖</span> All Books</div>
+      <div class="nav-item" onclick="showSection('add')"><span class="ni">➕</span> Add New Book</div>
+      <div class="nav-item" onclick="showSection('search')"><span class="ni">🔍</span> Search Books</div>
+      <div class="nav-label">System</div>
+      <div class="nav-item" onclick="showSection('schema')"><span class="ni">🗄️</span> DB Schema</div>
+    </div>
+    <div class="sidebar-stats">
+      <div class="ss-label">Library Stats</div>
+      <div class="ss-row">
+        <div class="ss-item"><div class="ss-num" id="statTotal">0</div><div class="ss-sub">Total</div></div>
+        <div class="ss-item"><div class="ss-num" id="statAvail" style="color:var(--green)">0</div><div class="ss-sub">Available</div></div>
+        <div class="ss-item"><div class="ss-num" id="statOut" style="color:var(--amber)">0</div><div class="ss-sub">Out</div></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ALL BOOKS -->
+    <div class="section active" id="secBooks">
+      <div class="topbar">
+        <div><h1>Book Catalogue</h1><p>View, edit and manage all library books</p></div>
+        <button class="btn btn-teal" onclick="showSection('add')">➕ Add New Book</button>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card"><div class="sc-icon teal">📚</div><div><div class="sc-num" id="cardTotal">0</div><div class="sc-label">Total Books</div></div></div>
+        <div class="stat-card"><div class="sc-icon green">✅</div><div><div class="sc-num" id="cardAvail">0</div><div class="sc-label">Available</div></div></div>
+        <div class="stat-card"><div class="sc-icon amber">📤</div><div><div class="sc-num" id="cardOut">0</div><div class="sc-label">Checked Out</div></div></div>
+        <div class="stat-card"><div class="sc-icon red">⚠️</div><div><div class="sc-num" id="cardLow">0</div><div class="sc-label">Low Stock</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div><h3>All Books</h3><p id="bookCountLabel">Loading...</p></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="search-wrap" style="width:220px">
+              <span class="sicon">🔍</span>
+              <input type="text" class="search-input" placeholder="Quick search..." id="quickSearch" oninput="quickFilter()">
+            </div>
+            <select class="filter-select" id="sortSelect" onchange="sortBooks()">
+              <option value="title">Sort: Title</option>
+              <option value="author">Sort: Author</option>
+              <option value="year">Sort: Year</option>
+              <option value="available">Sort: Available</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="booksTable">
+            <thead>
+              <tr>
+                <th onclick="sortBy('book_id')">ID</th>
+                <th onclick="sortBy('title')">Title</th>
+                <th onclick="sortBy('author')">Author</th>
+                <th onclick="sortBy('category')">Category</th>
+                <th onclick="sortBy('isbn')">ISBN</th>
+                <th onclick="sortBy('year')">Year</th>
+                <th onclick="sortBy('quantity')">Qty</th>
+                <th onclick="sortBy('available')">Available</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="booksBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="pageInfo">Showing 0 books</span>
+          <div class="page-btns" id="pageBtns"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD BOOK -->
+    <div class="section" id="secAdd">
+      <div class="topbar">
+        <div><h1>Add New Book</h1><p>Fill in the details to add a book to the library</p></div>
+        <button class="btn btn-outline" onclick="showSection('books')">Back to Books</button>
+      </div>
+      <div class="panel" style="max-width:680px">
+        <div class="panel-header"><div><h3>Book Information</h3><p>Fields marked * are required</p></div></div>
+        <div style="padding:28px">
+          <div class="form-grid">
+            <div class="full">
+              <label>Book Title *</label>
+              <input type="text" id="addTitle" placeholder="e.g. Introduction to Algorithms">
+              <div class="field-error" id="errTitle">Title is required</div>
+            </div>
+            <div>
+              <label>Author *</label>
+              <input type="text" id="addAuthor" placeholder="e.g. Thomas H. Cormen">
+              <div class="field-error" id="errAuthor">Author is required</div>
+            </div>
+            <div>
+              <label>Category *</label>
+              <select id="addCategory">
+                <option value="">Select category</option>
+                <option>Computer Science</option><option>Mathematics</option>
+                <option>Physics</option><option>Chemistry</option><option>Biology</option>
+                <option>Engineering</option><option>Business</option><option>Literature</option>
+                <option>History</option><option>Philosophy</option><option>Other</option>
+              </select>
+              <div class="field-error" id="errCategory">Category is required</div>
+            </div>
+            <div>
+              <label>ISBN</label>
+              <input type="text" id="addIsbn" placeholder="e.g. 978-0-262-03384-8">
+            </div>
+            <div>
+              <label>Publisher</label>
+              <input type="text" id="addPublisher" placeholder="e.g. MIT Press">
+            </div>
+            <div>
+              <label>Publication Year</label>
+              <input type="number" id="addYear" placeholder="e.g. 2022" min="1900" max="2026">
+            </div>
+            <div>
+              <label>Quantity *</label>
+              <input type="number" id="addQuantity" placeholder="e.g. 5" min="1">
+              <div class="field-error" id="errQuantity">Must be at least 1</div>
+            </div>
+            <div>
+              <label>Available Copies</label>
+              <input type="number" id="addAvailable" placeholder="e.g. 5" min="0">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+            <button class="btn btn-teal" onclick="addBook()">➕ Add Book</button>
+            <button class="btn btn-outline" onclick="clearAddForm()">Clear Form</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="section" id="secSearch">
+      <div class="topbar"><div><h1>Search Books</h1><p>Find books by title, author, category or ISBN</p></div></div>
+      <div class="panel" style="margin-bottom:24px">
+        <div style="padding:24px">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div class="search-wrap">
+              <span class="sicon">🔍</span>
+              <input type="text" class="search-input" id="searchInput" placeholder="Type to search books..." oninput="doSearch()">
+            </div>
+            <select class="filter-select" id="searchField" onchange="doSearch()">
+              <option value="all">All Fields</option>
+              <option value="title">Title</option>
+              <option value="author">Author</option>
+              <option value="category">Category</option>
+              <option value="isbn">ISBN</option>
+            </select>
+            <button class="btn btn-teal" onclick="doSearch()">Search</button>
+          </div>
+          <div id="searchResults" style="margin-top:10px;font-size:13px;color:var(--text-mid)"></div>
+        </div>
+      </div>
+      <div class="panel" id="searchPanel" style="display:none">
+        <div class="panel-header"><div><h3>Search Results</h3><p id="searchCountLabel"></p></div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Title</th><th>Author</th><th>Category</th><th>ISBN</th><th>Year</th><th>Available</th><th>Actions</th></tr></thead>
+            <tbody id="searchBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DB SCHEMA -->
+    <div class="section" id="secSchema">
+      <div class="topbar"><div><h1>Database Schema</h1><p>MySQL table structure for the books system</p></div></div>
+      <div class="panel" style="max-width:700px">
+        <div class="panel-header"><div><h3>books Table</h3><p>Run this in MySQL Workbench</p></div></div>
+        <div style="padding:20px">
+          <div class="schema-box">
+<span class="kw">CREATE DATABASE</span> library_db;<br>
+<span class="kw">USE</span> library_db;<br><br>
+<span class="kw">CREATE TABLE</span> <span class="tn">books</span> (<br>
+&nbsp;&nbsp;<span class="pk">book_id</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">INT AUTO_INCREMENT PRIMARY KEY</span>,<br>
+&nbsp;&nbsp;title &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">VARCHAR(255)</span> <span class="kw">NOT NULL</span>,<br>
+&nbsp;&nbsp;author &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">VARCHAR(150)</span> <span class="kw">NOT NULL</span>,<br>
+&nbsp;&nbsp;category &nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">VARCHAR(100)</span>,<br>
+&nbsp;&nbsp;isbn &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">VARCHAR(20)</span> <span class="kw">UNIQUE</span>,<br>
+&nbsp;&nbsp;publisher &nbsp;&nbsp;&nbsp;<span class="tp">VARCHAR(150)</span>,<br>
+&nbsp;&nbsp;year &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">INT</span>,<br>
+&nbsp;&nbsp;quantity &nbsp;&nbsp;&nbsp;&nbsp;<span class="tp">INT DEFAULT 0</span>,<br>
+&nbsp;&nbsp;available &nbsp;&nbsp;&nbsp;<span class="tp">INT DEFAULT 0</span>,<br>
+&nbsp;&nbsp;created_at &nbsp;&nbsp;<span class="tp">TIMESTAMP DEFAULT NOW()</span><br>
+);<br><br>
+<span class="cm">-- Flask routes connect to this table directly</span><br>
+<span class="cm">-- Add:    INSERT INTO books (title, author, ...) VALUES (%s, %s, ...)</span><br>
+<span class="cm">-- View:   SELECT * FROM books</span><br>
+<span class="cm">-- Search: SELECT * FROM books WHERE title LIKE '%query%'</span><br>
+<span class="cm">-- Update: UPDATE books SET title=%s, ... WHERE book_id=%s</span><br>
+<span class="cm">-- Delete: DELETE FROM books WHERE book_id=%s</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('editOverlay')">✕</button>
+    <div class="modal-title">Edit Book</div>
+    <div class="modal-sub">Update the book information below</div>
+    <input type="hidden" id="editId">
+    <div class="form-grid">
+      <div class="full"><label>Book Title *</label><input type="text" id="editTitle"></div>
+      <div><label>Author *</label><input type="text" id="editAuthor"></div>
+      <div>
+        <label>Category</label>
+        <select id="editCategory">
+          <option value="">Select category</option>
+          <option>Computer Science</option><option>Mathematics</option><option>Physics</option>
+          <option>Chemistry</option><option>Biology</option><option>Engineering</option>
+          <option>Business</option><option>Literature</option><option>History</option>
+          <option>Philosophy</option><option>Other</option>
+        </select>
+      </div>
+      <div><label>ISBN</label><input type="text" id="editIsbn"></div>
+      <div><label>Publisher</label><input type="text" id="editPublisher"></div>
+      <div><label>Year</label><input type="number" id="editYear"></div>
+      <div><label>Quantity</label><input type="number" id="editQuantity" min="0"></div>
+      <div><label>Available</label><input type="number" id="editAvailable" min="0"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('editOverlay')">Cancel</button>
+      <button class="btn btn-teal" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="overlay" id="deleteOverlay">
+  <div class="modal confirm-modal">
+    <div class="confirm-icon">🗑️</div>
+    <h2>Delete Book?</h2>
+    <p>Are you sure you want to delete<br><span class="confirm-book-name" id="deleteBookName"></span>?<br><br>This action cannot be undone.</p>
+    <input type="hidden" id="deleteId">
+    <div class="confirm-btns">
+      <button class="btn btn-outline" onclick="closeModal('deleteOverlay')">No, Cancel</button>
+      <button class="btn btn-red" onclick="confirmDelete()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  let books = [
+    { book_id:1, title:'Introduction to Algorithms', author:'Thomas H. Cormen', category:'Computer Science', isbn:'978-0262033848', publisher:'MIT Press', year:2022, quantity:5, available:3 },
+    { book_id:2, title:'Clean Code', author:'Robert C. Martin', category:'Computer Science', isbn:'978-0132350884', publisher:'Prentice Hall', year:2008, quantity:4, available:4 },
+    { book_id:3, title:'Calculus: Early Transcendentals', author:'James Stewart', category:'Mathematics', isbn:'978-1285741550', publisher:'Cengage', year:2015, quantity:6, available:2 },
+    { book_id:4, title:'A Brief History of Time', author:'Stephen Hawking', category:'Physics', isbn:'978-0553380163', publisher:'Bantam Books', year:1998, quantity:3, available:0 },
+    { book_id:5, title:'The Great Gatsby', author:'F. Scott Fitzgerald', category:'Literature', isbn:'978-0743273565', publisher:'Scribner', year:1925, quantity:8, available:8 },
+    { book_id:6, title:'Database System Concepts', author:'Abraham Silberschatz', category:'Computer Science', isbn:'978-0078022159', publisher:'McGraw-Hill', year:2019, quantity:4, available:1 },
+  ];
+
+  let nextId = 7;
+  let currentPage = 1;
+  const perPage = 10;
+  let sortField = 'book_id';
+  let sortAsc = true;
+  let filterText = '';
+
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const map = { books:'secBooks', add:'secAdd', search:'secSearch', schema:'secSchema' };
+    document.getElementById(map[id])?.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
+    });
+    if (id === 'books') renderTable();
+  }
+
+  function renderTable() {
+    let data = [...books];
+    if (filterText) {
+      const q = filterText.toLowerCase();
+      data = data.filter(b =>
+        b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) ||
+        b.category.toLowerCase().includes(q) || (b.isbn||'').toLowerCase().includes(q)
+      );
+    }
+    data.sort((a, b) => {
+      let av = a[sortField] ?? '', bv = b[sortField] ?? '';
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      return sortAsc ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+    });
+    updateStats();
+    const total = data.length;
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    if (currentPage > totalPages) currentPage = 1;
+    const start = (currentPage - 1) * perPage;
+    const pageData = data.slice(start, start + perPage);
+    document.getElementById('bookCountLabel').textContent = `${total} book${total !== 1 ? 's' : ''} in library`;
+    document.getElementById('pageInfo').textContent = `Showing ${pageData.length} of ${total} books`;
+    const tbody = document.getElementById('booksBody');
+    if (pageData.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="es-icon">📭</div><h3>No books found</h3><p>Try a different search or add a new book</p></div></td></tr>`;
+    } else {
+      tbody.innerHTML = pageData.map(b => `
+        <tr>
+          <td><span class="id-badge">#${b.book_id}</span></td>
+          <td style="color:var(--text);font-weight:500;max-width:200px">${b.title}</td>
+          <td>${b.author}</td>
+          <td><span class="category-tag">${b.category}</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${b.isbn || '—'}</td>
+          <td>${b.year || '—'}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${b.quantity}</td>
+          <td><span class="avail-badge ${b.available===0?'none':b.available<=2?'low':'ok'}">${b.available}</span></td>
+          <td><div class="action-row">
+            <button class="btn btn-amber btn-sm" onclick="openEdit(${b.book_id})">Edit</button>
+            <button class="btn btn-red btn-sm" onclick="openDelete(${b.book_id})">Delete</button>
+          </div></td>
+        </tr>`).join('');
+    }
+    const pageBtns = document.getElementById('pageBtns');
+    pageBtns.innerHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+      btn.textContent = i;
+      btn.onclick = () => { currentPage = i; renderTable(); };
+      pageBtns.appendChild(btn);
+    }
+  }
+
+  function updateStats() {
+    const total = books.length;
+    const avail = books.reduce((s,b) => s+b.available, 0);
+    const out = books.reduce((s,b) => s+(b.quantity-b.available), 0);
+    const low = books.filter(b => b.available>0 && b.available<=2).length;
+    document.getElementById('cardTotal').textContent = total;
+    document.getElementById('cardAvail').textContent = avail;
+    document.getElementById('cardOut').textContent = out;
+    document.getElementById('cardLow').textContent = low;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statAvail').textContent = avail;
+    document.getElementById('statOut').textContent = out;
+  }
+
+  function sortBy(field) {
+    if (sortField === field) sortAsc = !sortAsc; else { sortField = field; sortAsc = true; }
+    renderTable();
+  }
+
+  function sortBooks() { sortField = document.getElementById('sortSelect').value; sortAsc = true; renderTable(); }
+  function quickFilter() { filterText = document.getElementById('quickSearch').value; currentPage = 1; renderTable(); }
+
+  function gv(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+  function addBook() {
+    let valid = true;
+    ['Title','Author','Category','Quantity'].forEach(f => document.getElementById('err'+f).classList.remove('show'));
+    if (!gv('addTitle')) { document.getElementById('errTitle').classList.add('show'); valid=false; }
+    if (!gv('addAuthor')) { document.getElementById('errAuthor').classList.add('show'); valid=false; }
+    if (!gv('addCategory')) { document.getElementById('errCategory').classList.add('show'); valid=false; }
+    const qty = parseInt(gv('addQuantity'));
+    if (!gv('addQuantity') || qty < 1) { document.getElementById('errQuantity').classList.add('show'); valid=false; }
+    if (!valid) return;
+    const avail = parseInt(gv('addAvailable')) || qty;
+    const book = {
+      book_id: nextId++,
+      title: gv('addTitle'), author: gv('addAuthor'), category: gv('addCategory'),
+      isbn: gv('addIsbn'), publisher: gv('addPublisher'),
+      year: parseInt(gv('addYear')) || null, quantity: qty, available: avail
+    };
+    const fd = new FormData();
+    Object.entries(book).forEach(([k,v]) => fd.append(k, v ?? ''));
+    fetch('/add_book', { method:'POST', body:fd }).then(r=>r.json()).then(d=>{ if(d.book_id) book.book_id=d.book_id; }).catch(()=>{});
+    books.push(book);
+    clearAddForm();
+    showToast('success', `"${book.title}" added successfully!`);
+    showSection('books');
+  }
+
+  function clearAddForm() {
+    ['addTitle','addAuthor','addIsbn','addPublisher','addYear','addQuantity','addAvailable'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('addCategory').value = '';
+  }
+
+  function openEdit(id) {
+    const b = books.find(b => b.book_id === id); if (!b) return;
+    document.getElementById('editId').value = id;
+    document.getElementById('editTitle').value = b.title;
+    document.getElementById('editAuthor').value = b.author;
+    document.getElementById('editCategory').value = b.category;
+    document.getElementById('editIsbn').value = b.isbn || '';
+    document.getElementById('editPublisher').value = b.publisher || '';
+    document.getElementById('editYear').value = b.year || '';
+    document.getElementById('editQuantity').value = b.quantity;
+    document.getElementById('editAvailable').value = b.available;
+    document.getElementById('editOverlay').classList.add('active');
+  }
+
+  function saveEdit() {
+    const id = parseInt(document.getElementById('editId').value);
+    const idx = books.findIndex(b => b.book_id === id); if (idx === -1) return;
+    const updated = { ...books[idx],
+      title: document.getElementById('editTitle').value,
+      author: document.getElementById('editAuthor').value,
+      category: document.getElementById('editCategory').value,
+      isbn: document.getElementById('editIsbn').value,
+      publisher: document.getElementById('editPublisher').value,
+      year: parseInt(document.getElementById('editYear').value) || null,
+      quantity: parseInt(document.getElementById('editQuantity').value) || 0,
+      available: parseInt(document.getElementById('editAvailable').value) || 0,
+    };
+    const fd = new FormData();
+    Object.entries(updated).forEach(([k,v]) => fd.append(k, v ?? ''));
+    fetch('/update_book', { method:'POST', body:fd }).catch(()=>{});
+    books[idx] = updated;
+    closeModal('editOverlay');
+    renderTable();
+    showToast('success', `"${updated.title}" updated successfully!`);
+  }
+
+  function openDelete(id) {
+    const b = books.find(b => b.book_id === id); if (!b) return;
+    document.getElementById('deleteId').value = id;
+    document.getElementById('deleteBookName').textContent = `"${b.title}"`;
+    document.getElementById('deleteOverlay').classList.add('active');
+  }
+
+  function confirmDelete() {
+    const id = parseInt(document.getElementById('deleteId').value);
+    const b = books.find(b => b.book_id === id);
+    const fd = new FormData(); fd.append('book_id', id);
+    fetch('/delete_book', { method:'POST', body:fd }).catch(()=>{});
+    books = books.filter(b => b.book_id !== id);
+    closeModal('deleteOverlay');
+    renderTable();
+    showToast('info', `"${b?.title}" deleted.`);
+  }
+
+  function doSearch() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const field = document.getElementById('searchField').value;
+    const panel = document.getElementById('searchPanel');
+    if (!q) { panel.style.display='none'; document.getElementById('searchResults').textContent=''; return; }
+    let results = books.filter(b => {
+      if (field==='all') return b.title.toLowerCase().includes(q)||b.author.toLowerCase().includes(q)||b.category.toLowerCase().includes(q)||(b.isbn||'').toLowerCase().includes(q);
+      if (field==='title') return b.title.toLowerCase().includes(q);
+      if (field==='author') return b.author.toLowerCase().includes(q);
+      if (field==='category') return b.category.toLowerCase().includes(q);
+      if (field==='isbn') return (b.isbn||'').toLowerCase().includes(q);
+    });
+    panel.style.display='block';
+    document.getElementById('searchCountLabel').textContent = `${results.length} result${results.length!==1?'s':''} for "${q}"`;
+    document.getElementById('searchResults').textContent = `Found ${results.length} book${results.length!==1?'s':''}`;
+    const tbody = document.getElementById('searchBody');
+    if (results.length===0) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="es-icon">🔍</div><h3>No results found</h3><p>Try a different search term</p></div></td></tr>`;
+    } else {
+      tbody.innerHTML = results.map(b=>`
+        <tr>
+          <td><span class="id-badge">#${b.book_id}</span></td>
+          <td style="color:var(--text);font-weight:500">${hl(b.title,q)}</td>
+          <td>${hl(b.author,q)}</td>
+          <td><span class="category-tag">${b.category}</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${b.isbn||'—'}</td>
+          <td>${b.year||'—'}</td>
+          <td><span class="avail-badge ${b.available===0?'none':b.available<=2?'low':'ok'}">${b.available}</span></td>
+          <td><div class="action-row">
+            <button class="btn btn-amber btn-sm" onclick="openEdit(${b.book_id})">Edit</button>
+            <button class="btn btn-red btn-sm" onclick="openDelete(${b.book_id})">Delete</button>
+          </div></td>
+        </tr>`).join('');
+    }
+  }
+
+  function hl(text, q) {
+    const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    return text.replace(re, '<mark style="background:rgba(45,212,191,0.25);color:var(--teal);border-radius:2px">$1</mark>');
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('active'); }));
+
+  function showToast(type, msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast '+type; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  renderTable();
+</script>
+</body>
+</html>
